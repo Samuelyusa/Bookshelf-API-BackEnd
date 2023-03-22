@@ -14,26 +14,28 @@ const addBookHandler = (request, h) => {
         id, name, year, author, summary, publisher, pageCount, readPage, finished, reading, insertedAt, updatedAt
     };
 
-    if (name.length) {
-        if (readPage < pageCount) {
+    const isNamed = newBook.name;
+
+    if (isNamed && name.length) {
+        if (readPage < pageCount || readPage == pageCount) {
             books.push(newBook);
         }
         else {
             const response = h.response({
-            status: 'fail',
-            message: 'Gagal menambahkan buku. readPage tidak boleh lebih besar dari pageCount',
-        });
-        response.code(400);
-        return response;
+                status: 'fail',
+                message: 'Gagal menambahkan buku. readPage tidak boleh lebih besar dari pageCount',
+            });
+            response.code(400);
+            return response;
         }
     }
     else {
         const response = h.response({
-        status: 'fail',
-        message: 'Gagal menambahkan buku. Mohon isi nama buku',
-    });
-    response.code(400);
-    return response;
+            status: 'fail',
+            message: 'Gagal menambahkan buku. Mohon isi nama buku',
+        });
+        response.code(400);
+        return response;
     }
 
     const isSuccess = books.filter((book) => book.id === id).length > 0;
@@ -42,7 +44,7 @@ const addBookHandler = (request, h) => {
     if (isSuccess) {
         const response = h.response({
             status: 'success',
-            message: 'Buku berhasil ditambahakan',
+            message: 'Buku berhasil ditambahkan',
             data: {
                 bookId: id,
             },
@@ -60,20 +62,66 @@ const addBookHandler = (request, h) => {
 };
 
 const getAllBooksHandler = (request, h) => {
-    const getBook = books.map((book) => ({
-        id: book.id,
-        name: book.name,
-        publisher: book.publisher,
-    }));
 
-    const response = h.response({
-        status: 'success',
-        data: {
-            books: getBook,
-        },
-    });
-    response.code(200);
-    return response;
+    const { name, reading, finished } = request.query;
+    
+    if (!name && !reading && !finished) {
+        const response = h.response({
+            status: 'success',
+            data: {
+                books: books.map((book) => ({
+                    id: book.id,
+                    name: book.name,
+                    publisher: book.publisher,
+                }))
+            },
+        });
+        response.code(200);
+        return response;
+    } else if (name) {
+        const response = h.response({
+            status: 'success',
+            data: {
+                books: books.filter((book) => book.name.toLowerCase()
+                    .includes(name.toLowerCase()))
+                    .map((book) => ({
+                        id: book.id,
+                        name: book.name,
+                        publisher: book.publisher,
+                    }))
+            },
+        });
+        response.code(200);
+        return response;
+    } else if (reading) {
+        const response = h.response({
+            status: 'success',
+            data: {
+                books: books.filter((book) => book.reading == reading)
+                    .map((book) => ({
+                        id: book.id,
+                        name: book.name,
+                        publisher: book.publisher,
+                    }))
+            },
+        });
+        response.code(200);
+        return response;
+    } else if (finished) {
+        const response = h.response({
+            status: 'success',
+            data: {
+                books: books.filter((book) => book.finished == finished)
+                    .map((book) => ({
+                        id: book.id,
+                        name: book.name,
+                        publisher: book.publisher,
+                    }))
+            },
+        });
+        response.code(200);
+        return response;
+    }
 };
 
 const getBookByIdHandler = (request, h) => {
@@ -106,7 +154,7 @@ const editBookByIdHandler = (request, h) => {
     const index = books.findIndex((book) => book.id === id);
 
     if (index !== -1) {
-        if (name.length) {
+        if (name && name.length) {
             if (readPage < pageCount) {
                 books[index] = {
                     ...books[index],
